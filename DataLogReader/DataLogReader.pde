@@ -17,7 +17,7 @@ void setup(){
   // List all the available serial ports
   printArray(Serial.list());
   // Open the port you are using at the rate you want:
-  port = new Serial(this, Serial.list()[0], 9600);
+  port = new Serial(this, Serial.list()[0], 115200);
   println(sketchPath());
   List<String> names = Arrays.asList(new File(sketchPath() + "/data").list());
   for(int i = 0; outputFile == null; i++){
@@ -32,7 +32,7 @@ void setup(){
   }
   println(outputFile.getPath());
   
-  frameRate(30);
+  frameRate(1000);
   
   delay(500);
 }
@@ -40,11 +40,14 @@ void setup(){
 int data;
 void draw(){
   //port.write('A');
-  if((data = port.read()) != -1){
+  while((data = port.read()) != -1){
     //println((int)data);
-    println(bytesSoFar + "/" + byteCount);
+    if(bytesSoFar % 1024 == 0) {
+      println(bytesSoFar + "/" + byteCount);
+    }
     onByte();
-  }else if(state == -1){
+  }
+  if(data == -1 && state == -1){
     port.write('p'); // p for pog or please depending on how it's going
   }
 }
@@ -60,24 +63,21 @@ void onByte(){
       state++;
       break;
     case 0:
-      byteCount = 0;
+      byteCount = 0; //what is this doing
       byteCount |= (data << 0);
-      println(byteCount);
       state++;
       break;
     case 1:
       byteCount |= (data << 8);
-      println(byteCount);
       state++;
       break;
     case 2:
       byteCount |= (data << 16);
-      println(byteCount);
       state++;
       break;
     case 3:
       byteCount |= (data << 24);
-      println(byteCount);
+      println("Reading file with "+byteCount+" bytes");
       fileData = new byte[byteCount];
       state++;
       break;

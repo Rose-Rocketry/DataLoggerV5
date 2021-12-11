@@ -1,9 +1,9 @@
 #include <SPI.h>
 #include <SdFat.h>
 #include <Wire.h>
-#include <Adafruit_MPL3115A2.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
+#include <SparkFunMPL3115A2.h>
 
 
 /*
@@ -26,7 +26,7 @@
 */
 
 //Complier Flags
-#define DEBUG true
+#define DEBUG false
 #define DEBUG_HEX false
 #define RUNONCE true
 #define TIMEOUT false
@@ -45,7 +45,6 @@ SdFat sd;
 File fs;
 char filename[MAX_FILE_LEN];
 Adafruit_BNO055 bno = Adafruit_BNO055();
-Adafruit_MPL3115A2 baro = Adafruit_MPL3115A2();
 
 //unsigned long endtime = 10 * 60*1000;  //Unsigned long for the time logging should halt as a fallback
 float currTime = 0;
@@ -53,6 +52,11 @@ float currTime = 0;
 byte *dataBuffer = new byte[BUFFER_SIZE * PACKET_LENGTH]; // Data buffer for logging data prior to flushing to SD
 int bufferPos = 0;
 
+MPL3115A2 myPressure;
+
+float pressure;
+float temperature;
+float altitude;
 
 void setup() {
   //Initialize blinky LED
@@ -60,6 +64,7 @@ void setup() {
   digitalWrite(A0, HIGH);
   
   // Open serial communications and wait for port to open:
+  Wire.begin();
   Serial.begin(115200);
   while (DEBUG && !Serial) {
     // Wait for serial port to connect. Blink LED. Needed for native USB only
@@ -68,6 +73,11 @@ void setup() {
 	digitalWrite(A0, HIGH);
 	delay(500);
   }
+  myPressure.begin();
+  myPressure.setModeAltimeter();
+
+  myPressure.setOversampleRate(1);
+  myPressure.enableEventFlags();
   
   //SD card check
   Serial.print("Initializing SD card...");
@@ -102,10 +112,6 @@ void setup() {
 
   //****************************************************************************
 
-  //Code for altimeters
-  if (!baro.begin()) {
-    Serial.print("alt = no");// Get sensor online
-  }
   if (!bno.begin())
   {
     /* There was a problem detecting the BNO055 ... check your connections */
@@ -122,9 +128,9 @@ void setup() {
 	  delay(500);
 	
   }
+  
   Serial.println();
   bno.setExtCrystalUse(true);
-  baro.setSeaPressure(1013.26); // We should probably calibrate this
   
   digitalWrite(A0, LOW);
 }
@@ -138,12 +144,10 @@ void loop() {
 
   //The sensors update very fast, so they have to be measure beforehand
   //to have agreement between the Debug and recorded values.
-  Serial.println("Recording");
   currTime=float(millis());
-  float alt = baro.getAltitude();
-  float pressure = baro.getPressure();
-  float temp = baro.getTemperature();
-  Serial.println("Recording2");
+  float alt = myPressure.readAltitude();
+  float pressure = myPressure.readPressure();
+  float temp = myPressure.readTemp();
   float oriX = oriEvent.orientation.x;
   float oriY = oriEvent.orientation.y;
   float oriZ = oriEvent.orientation.z;
@@ -154,7 +158,6 @@ void loop() {
   float gyroY = gyroEvent.gyro.y;
   float gyroZ = gyroEvent.gyro.z;
 
-  Serial.println("Storing");
   store(0, currTime);
   store(4, alt);
   store(8, pressure);
