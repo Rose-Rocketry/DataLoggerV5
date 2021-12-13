@@ -17,7 +17,7 @@ void setup(){
   // List all the available serial ports
   printArray(Serial.list());
   // Open the port you are using at the rate you want:
-  port = new Serial(this, Serial.list()[0], 115200);
+  port = new Serial(this, Serial.list()[0], 74880);
   println(sketchPath());
   List<String> names = Arrays.asList(new File(sketchPath() + "/data").list());
   for(int i = 0; outputFile == null; i++){

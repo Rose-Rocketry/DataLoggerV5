@@ -12,7 +12,7 @@ char filename[MAX_FILE_LEN];
 void setup() {
   pinMode(A0, OUTPUT);
   
-  Serial.begin(115200);
+  Serial.begin(74880);
   if(!sd.begin(10)){
     if (DEBUG_PRINT_HEX_TO_SERIAL) {
       Serial.print("Could not connect to SD card!");
